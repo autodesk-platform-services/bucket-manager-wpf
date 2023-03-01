@@ -30,6 +30,6 @@ After creating a bucket and uploading an object, translate the file. When finish
 
 ## Running JavaScript code
 
-The CefSharp control allow **.EvaluateScriptAsync()** for executing JavaScript code, which can be used for quick testing some code. Load a model on the Viewer, then click on **JavaScript** button. Type, paste or open a .js file, then click on **Run** (or `Ctrl+R`) to run, the result will show on the bottom text area and (if applicable) at the DevTools Console). The video demonstrate it:
+The WebView2 control allow **.ExecuteScriptAsync()** for executing JavaScript code, which can be used for quick testing some code. Load a model on the Viewer, then click on **JavaScript** button. Type, paste or open a .js file, then click on **Run** (or `Ctrl+R`) to run, the result will show on the bottom text area and (if applicable) at the DevTools Console). The video demonstrate it:
 
 This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT). Please see the [LICENSE](LICENSE.txt) file for full details.
