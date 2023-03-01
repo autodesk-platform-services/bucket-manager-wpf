@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="stylesheet"
+          data-name="vs/editor/editor.main"
+          href="./min/vs/editor/editor.main.css" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #container {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="container" style="height: 100%"></div>
+    <script src="./min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': './min/vs' } });
+    </script>
+    <script src="./min/vs/editor/editor.main.nls.js"></script>
+    <script src="./min/vs/editor/editor.main.js"></script>
+<script>
+        // Hover on each property to see its docs!
+        const editor = monaco.editor.create(document.getElementById("container"), {
+
+            language: "javascript",
+            automaticLayout: true
+        });
+
+        editor.addAction(
+            {
+                id: "save-file",
+                label: "Save File",
+                keybindings: [
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS
+                ],
+                contextMenuGroupId: "js-editor",
+                contextMenuOrder: 0,            
+                run: (ed) => {
+                    window.chrome.webview.hostObjects.sync.bucketManager.SaveFile(ed.getValue());        
+                }
+            }
+        );
+
+        editor.addAction(
+            {
+                id: "load-file",
+                label: "Load File",
+                keybindings: [
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO
+                ],
+                contextMenuGroupId: "js-editor",
+                contextMenuOrder: 0,
+                run: (ed) => {
+                    let result = window.chrome.webview.hostObjects.sync.bucketManager.LoadFile();
+                    if (result != undefined){
+                        ed.setValue(result);
+                    }
+                }
+            }
+        );
+
+        editor.addAction(
+            {
+                id: "execute-js",
+                label: "Execute Javascript",
+                keybindings: [
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE
+                ],
+                contextMenuGroupId: "js-editor",
+                contextMenuOrder: 0,
+                run: (ed) => {
+                    window.chrome.webview.hostObjects.sync.bucketManager.RunJavascript(ed.getValue());
+                }
+            }
+        );
+        editor.addAction(
+            {
+                id: "close-window",
+                label: "Close editor",
+                keybindings: [
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyQ
+                ],
+                contextMenuGroupId: "js-editor",
+                contextMenuOrder: 0,
+                run: (ed) => {
+                    window.chrome.webview.hostObjects.sync.bucketManager.Close(ed.getValue());
+                }
+            }
+        );
+    </script>
+</body>
+</html>
