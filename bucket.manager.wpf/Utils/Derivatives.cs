@@ -1,36 +1,36 @@
-﻿using Autodesk.Forge.Model;
-using Autodesk.Forge;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Autodesk.ModelDerivative;
+using Autodesk.SDKManager;
+using Autodesk.ModelDerivative.Model;
 
-namespace bucket.manager.wpf.ForgeUtils
+namespace bucket.manager.wpf.Utils
 {
     internal static class Derivatives
     {
         /// <summary>
         /// Prepare a list of downloadables for a given URN
         /// </summary>
-        /// <param name="urn">URN of the resource on Autodesk Forge</param>
+        /// <param name="urn">URN of the resource in APS</param>
         /// <param name="accessToken">Valid access token to download the resources</param>
         /// <returns>List of resouces for the given URN</returns>
         public async static Task<List<Resource>> ExtractSVFAsync(string urn, string accessToken)
         {
-            DerivativesApi derivativeApi = new DerivativesApi();
-            derivativeApi.Configuration.AccessToken = accessToken;
+            var sdkManager = SdkManagerBuilder.Create().Build();
+            var modelDerivativeClient = new ModelDerivativeClient(sdkManager);
 
             // get the manifest for the URN
-            dynamic manifest = await derivativeApi.GetManifestAsync(urn);
+            var manifest = await modelDerivativeClient.GetManifestAsync(urn, accessToken: accessToken);
 
             // list items of the manifest file
-            List<ManifestItem> urns = ParseManifest(manifest.derivatives);
+            List<ManifestItem> urns = ParseManifest(manifest);
 
             // iterate on what's on the file
             foreach (ManifestItem item in urns)
@@ -220,28 +220,37 @@ namespace bucket.manager.wpf.ForgeUtils
         /// </summary>
         /// <param name="manifest"></param>
         /// <returns></returns>
-        private static List<ManifestItem> ParseManifest(dynamic manifest)
+        private static List<ManifestItem> ParseManifest(Manifest manifest)
         {
             List<ManifestItem> urns = new List<ManifestItem>();
-            foreach (KeyValuePair<string, object> item in manifest.Dictionary)
+            foreach (var derivative in manifest.Derivatives)
             {
-                DynamicDictionary itemKeys = (DynamicDictionary)item.Value;
-                if (itemKeys.Dictionary.ContainsKey("role") && ROLES.Contains(itemKeys.Dictionary["role"]))
+                urns.AddRange(ParseManifestChildren(derivative.Children));
+            }
+            return urns;
+        }
+
+        private static List<ManifestItem> ParseManifestChildren(List<ManifestChildren> children)
+        {
+            List<ManifestItem> items = new List<ManifestItem>();
+            foreach (var child in children)
+            {
+                if (ROLES.Contains(child.Role))
                 {
-                    urns.Add(new ManifestItem
+                    items.Add(new ManifestItem
                     {
-                        Guid = (string)itemKeys.Dictionary["guid"],
-                        MIME = (string)itemKeys.Dictionary["mime"],
-                        Path = DecomposeURN((string)itemKeys.Dictionary["urn"])
+                        Guid = child.Guid,
+                        MIME = child.Mime,
+                        Path = DecomposeURN(child.Urn)
                     });
                 }
 
-                if (itemKeys.Dictionary.ContainsKey("children"))
+                if (child.Children != null)
                 {
-                    urns.AddRange(ParseManifest(itemKeys.Dictionary["children"]));
+                    items.AddRange(ParseManifestChildren(child.Children));
                 }
             }
-            return urns;
+            return items;
         }
 
         private class PathInfo

@@ -207,7 +207,7 @@
   <data name="lblCreateBucketName" xml:space="preserve">
     <value>Enter your bucket name here:</value>
   </data>
-  <data name="lblForgeCredential" xml:space="preserve">
+  <data name="lblCredential" xml:space="preserve">
     <value>Application Credentials</value>
   </data>
   <data name="lblId" xml:space="preserve">

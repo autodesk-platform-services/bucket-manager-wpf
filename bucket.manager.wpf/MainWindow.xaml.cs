@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using Autodesk.Forge;
-using Autodesk.Forge.Model;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Autodesk.Forge.Client;
 using bucket.manager.wpf.ViewModels;
 using Microsoft.Win32;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
-using System.Windows.Media.Imaging;
 using RestSharp;
 using bucket.manager.wpf.Utils;
 using bucket.manager.wpf.Views;
-using Microsoft.Web.WebView2.Core.Raw;
-using System.Windows.Interop;
 using Microsoft.Web.WebView2.Core;
+using Autodesk.SDKManager;
+using Autodesk.Authentication;
+using Autodesk.Authentication.Model;
+using Autodesk.Oss;
+using Autodesk.ModelDerivative;
+using Autodesk.Oss.Model;
+using Autodesk.ModelDerivative.Model;
 
 namespace bucket.manager.wpf
 {
@@ -44,6 +44,9 @@ namespace bucket.manager.wpf
         private MonacoEditorHost? _editorHost;
 
         public bool EditorShown = false;
+
+        private SDKManager _sdkManager;
+
         public MainWindow()
         {
 
@@ -52,12 +55,13 @@ namespace bucket.manager.wpf
            
             Icon = ImageFromBytes.GetBitmapImage(StringResources.logo);
             DataContext = _context;
-            ForgeBucketsTree.ItemsSource = _buckets;
+            BucketsTree.ItemsSource = _buckets;
             _context.StatusBarText = StringResources.statusReady;
 
-            ForgeClientId.Text = Environment.GetEnvironmentVariable("FORGE_CLIENT_ID");
-            ForgeClientSecret.Text = Environment.GetEnvironmentVariable("FORGE_CLIENT_SECRET");
+            ClientId.Text = Environment.GetEnvironmentVariable("APS_CLIENT_ID");
+            ClientSecret.Text = Environment.GetEnvironmentVariable("APS_CLIENT_SECRET");
 
+            _sdkManager = SdkManagerBuilder.Create().Build();
         }
 
         private void CleanUp()
@@ -69,20 +73,13 @@ namespace bucket.manager.wpf
                 _context.StatusBarText = StringResources.statusReady;
         }
 
-        private async Task ForgeApiCaller(Func<Task> function)
+        private async Task APSApiCaller(Func<Task> function)
         {
             try
             {
                 _context.UIEnabled = false;
                 _context.IsProgressBarIndetermined = true;
                 await function();
-            }
-            catch (ApiException ee)
-            {
-                MessageBox.Show(ee.ErrorContent, StringResources.errorCaption + ee.ErrorCode);
-                _context.StatusBarText = StringResources.errGeneral;
-                _uiWait = false;
-                CleanUp();
             }
             catch (Exception ee)
             {
@@ -103,11 +100,11 @@ namespace bucket.manager.wpf
 
         private async void AuthenticateButton_Click(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
                 _uiWait = true;
-                var id = ForgeClientId.Text;
-                var secret = ForgeClientSecret.Text;
+                var id = ClientId.Text;
+                var secret = ClientSecret.Text;
 
                 if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(secret))
                 {
@@ -115,19 +112,11 @@ namespace bucket.manager.wpf
                     return;
                 }
 
-                var oAuth = new TwoLeggedApi();
                 _context.StatusBarText = StringResources.statusAuthenticating;
-                Bearer token = (await oAuth.AuthenticateAsync(
-                        id,
-                        secret,
-                        oAuthConstants.CLIENT_CREDENTIALS,
-                        new Scope[] { Scope.BucketRead, Scope.BucketCreate, Scope.DataRead, Scope.DataWrite }))
-                    .ToObject<Bearer>();
-
-
-
-                _context.AccessToken = token.AccessToken;
-                if (token.ExpiresIn != null) _expiresAt = DateTime.Now.AddSeconds(token.ExpiresIn.Value);
+                var authenticationClient = new AuthenticationClient(_sdkManager);
+                var auth = await authenticationClient.GetTwoLeggedTokenAsync(id, secret, new List<Scopes>() { Scopes.BucketRead, Scopes.BucketCreate, Scopes.DataRead, Scopes.DataWrite });
+                _context.AccessToken = auth.AccessToken;
+                if (auth.ExpiresIn != null) _expiresAt = DateTime.Now.AddSeconds(auth.ExpiresIn.Value);
 
                 // keep track on time
                 _tokenTimer = new HighPrecisionTimer()
@@ -174,26 +163,12 @@ namespace bucket.manager.wpf
         {
             nodeBucket.Items.Clear();
 
-            var objects = new ObjectsApi
-            {
-                Configuration =
-                {
-                    AccessToken = _context.AccessToken
-                }
-            };
-
-            var derivative = new DerivativesApi
-            {
-                Configuration =
-                {
-                    AccessToken = _context.AccessToken
-                }
-            };
+            var ossClient = new OssClient(_sdkManager);
 
             _context.StatusBarText = StringResources.statusRefreshingBucketItems + nodeBucket.Key;
             // show objects on the given TreeNode
-            BucketObjects objectsList = (await objects.GetObjectsAsync(nodeBucket.Key)).ToObject<BucketObjects>();
-            foreach (var objInfo in objectsList.Items)
+            var objects = await ossClient.GetObjectsAsync(nodeBucket.Key, accessToken: _context.AccessToken);
+            foreach (var objInfo in objects.Items)
             {
                 var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(objInfo.ObjectId);
 
@@ -220,17 +195,11 @@ namespace bucket.manager.wpf
         }
         private async void RefreshBucketButton_Click(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
 
                 _buckets.Clear();
-                var bucketApi = new BucketsApi
-                {
-                    Configuration =
-                    {
-                        AccessToken = _context.AccessToken
-                    }
-                };
+                var ossClient = new OssClient(_sdkManager);
 
                 // Control GetBucket pagination
                 string? lastBucket = null;
@@ -238,7 +207,7 @@ namespace bucket.manager.wpf
                 do
                 {
                     _context.StatusBarText = StringResources.statusRefreshingBuckets;
-                    buckets = (await bucketApi.GetBucketsAsync(Region.Text, 100, lastBucket)).ToObject<Buckets>();
+                    buckets = await ossClient.GetBucketsAsync(Region.Text, 100, lastBucket, accessToken: _context.AccessToken);
                     foreach (var bucketsItem in buckets.Items)
                     {
                         var nodeBucket = new BucketVM
@@ -267,18 +236,18 @@ namespace bucket.manager.wpf
         private async void UploadFileButton_Click(object sender, RoutedEventArgs e)
         {
 
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
                 _context.IsProgressBarIndetermined = false;
 
-                if (ForgeBucketsTree.SelectedItem is null or not BucketVM)
+                if (BucketsTree.SelectedItem is null or not BucketVM)
                 {
                     MessageBox.Show(StringResources.errorUploadMessage, StringResources.errorUploadCaption);
                     return;
                 }
 
 
-                var bucket = ForgeBucketsTree.SelectedItem as BucketVM;
+                var bucket = BucketsTree.SelectedItem as BucketVM;
                 var bucketKey = bucket?.Key;
 
                 // ask user to select file
@@ -290,14 +259,7 @@ namespace bucket.manager.wpf
                     return;
                 var filePath = formSelectFile.FileName;
                 var objectKey = Path.GetFileName(filePath);
-
-                var objects = new ObjectsApi
-                {
-                    Configuration =
-                    {
-                                    AccessToken = _context.AccessToken
-                    }
-                };
+                var ossClient = new OssClient(_sdkManager);
 
                 // get file size
                 var fileSize = (new FileInfo(filePath)).Length;
@@ -306,65 +268,16 @@ namespace bucket.manager.wpf
                 _context.StatusBarText = StringResources.statusPreparingUpload;
                 _context.IsProgressBarIndetermined = true;
 
-                // decide if upload direct or resumable (by chunks)
-                if (fileSize > UploadChunkSize) // upload in chunks
-                {
-                    var numberOfChunks = (long)Math.Round((double)(fileSize / UploadChunkSize)) + 1;
-
-                    _context.ProgressBarMaximum = (int)numberOfChunks;
-
-                    var start = 0L;
-                    var chunkSize = (numberOfChunks > 1 ? UploadChunkSize : fileSize);
-                    var end = chunkSize;
-                    var sessionId = Guid.NewGuid().ToString();
-
-                    // upload one chunk at a time
-                    using (var reader = new BinaryReader(new FileStream(filePath, FileMode.Open)))
-                    {
-                        for (var chunkIndex = 0; chunkIndex < numberOfChunks; chunkIndex++)
-                        {
-                            var range = $"bytes {start}-{end}/{fileSize}";
-
-                            var numberOfBytes = chunkSize + 1;
-                            var fileBytes = new byte[numberOfBytes];
-                            var memoryStream = new MemoryStream(fileBytes);
-                            reader.BaseStream.Seek(start, SeekOrigin.Begin);
-                            var count = reader.Read(fileBytes, 0, (int)numberOfBytes);
-                            memoryStream.Write(fileBytes, 0, (int)numberOfBytes);
-                            memoryStream.Position = 0;
-
-                            await objects.UploadChunkAsync(bucketKey, objectKey,
-                                (int)numberOfBytes, range, sessionId, memoryStream);
-
-                            start = end + 1;
-                            chunkSize = ((start + chunkSize > fileSize) ? fileSize - start - 1 : chunkSize);
-                            end = start + chunkSize;
-                            _context.IsProgressBarIndetermined = false;
-                            _context.StatusBarText =
-                                $"{(chunkIndex * chunkSize) / 1024.0 / 1024.0:F2}" + StringResources.statusMbsUploaded;
-                            _context.ProgressBarPercentage = chunkIndex;
-                        }
-                    }
-
-                    _context.ProgressBarPercentage = _context.ProgressBarMaximum;
-                }
-                else // upload in a single call
-                {
-                    using var streamReader = new StreamReader(filePath);
-                    await objects.UploadObjectAsync(bucketKey,
-                        objectKey, (int)streamReader.BaseStream.Length, streamReader.BaseStream,
-                        "application/octet-stream");
-                }
-
+                await ossClient.Upload(bucketKey, objectKey, filePath, accessToken: _context.AccessToken, new System.Threading.CancellationToken());
                 await UpdateBucketObjects(bucket, true);
             });
         }
 
         private async void DeleteObjectButton_Click(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
-                var selectedItem = ForgeBucketsTree.SelectedItem;
+                var selectedItem = BucketsTree.SelectedItem;
                 if (selectedItem is null or not BucketItemVM)
                 {
                     MessageBox.Show(StringResources.errorObjectSelectionMessage, StringResources.errorObjectSelectionCaption);
@@ -375,32 +288,20 @@ namespace bucket.manager.wpf
                     StringResources.msgDeleteConfirmCaption, MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (dlgResult != MessageBoxResult.Yes)
                     return;
-                var objects = new ObjectsApi
-                {
-                    Configuration =
-                    {
-                        AccessToken = _context.AccessToken
-                    }
-                };
+                var ossClient = new OssClient(_sdkManager);
 
                 _context.StatusBarText = StringResources.statusDelete + bucketItem.Name;
-                await objects.DeleteObjectAsync(bucketItem.ParentKey, bucketItem.Name);
+                await ossClient.DeleteObjectAsync(bucketItem.ParentKey, bucketItem.Name, accessToken: _context.AccessToken);
                 bucketItem.Remove();
             });
         }
 
         private async void IsTranslationReady(object sender, EventArgs e)
         {
-            var derivative = new DerivativesApi
-            {
-                Configuration =
-                {
-                    AccessToken = _context.AccessToken
-                }
-            };
+            var modelDerivativeClient = new ModelDerivativeClient(_sdkManager);
 
             // get the translation manifest
-            dynamic manifest = await derivative.GetManifestAsync(_translationTimer.BucketItem?.Key);
+            dynamic manifest = await modelDerivativeClient.GetManifestAsync(_translationTimer.BucketItem?.Key, accessToken: _context.AccessToken);
             var progress = (string.IsNullOrWhiteSpace(Regex.Match(manifest.progress, @"\d+").Value)
                 ? 100
                 : int.Parse(Regex.Match(manifest.progress, @"\d+").Value));
@@ -428,53 +329,48 @@ namespace bucket.manager.wpf
         }
         private async void TranslateMenuItemClick(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
                 var item = sender as MenuItem;
-                JobPayloadItem.TypeEnum workType;
-                Enum.TryParse(item?.Name, out workType);
-                var selectedItem = ForgeBucketsTree.SelectedItem;
+                var selectedItem = BucketsTree.SelectedItem;
                 if (selectedItem is null or not BucketItemVM)
                 {
                     MessageBox.Show(StringResources.errorObjectSelectionMessage, StringResources.errorObjectSelectionCaption);
                     return;
                 }
-
                 var bucketItem = selectedItem as BucketItemVM;
-                _context.StatusBarText = string.Format("{0}, {1}", bucketItem.Name,
-                    StringResources.statusTranslating);
+                _context.StatusBarText = string.Format("{0}, {1}", bucketItem.Name, StringResources.statusTranslating);
                 var urn = bucketItem?.Key;
-                JobPayloadItem payloadItem = null;
-                if (workType is JobPayloadItem.TypeEnum.Svf or JobPayloadItem.TypeEnum.Svf2)
+                var modelDerivativeClient = new ModelDerivativeClient(_sdkManager);
+                var payload = new JobPayload
                 {
-                    payloadItem = new JobPayloadItem(
-                        workType,
-                        new List<JobPayloadItem.ViewsEnum>()
-                        {
-                            JobPayloadItem.ViewsEnum._2d,
-                            JobPayloadItem.ViewsEnum._3d
-                        });
-                }
-                else
-                {
-                    payloadItem = new JobPayloadItem(workType);
-                }
-
-                var outputs = new List<JobPayloadItem>() { payloadItem };
-
-                var derivative = new DerivativesApi
-                {
-                    Configuration =
+                    Input = new JobPayloadInput
                     {
-                        AccessToken = _context.AccessToken
+                        Urn = urn
+                    },
+                    Output = new JobPayloadOutput
+                    {
+                        Formats = new List<JobPayloadFormat>
+                        {
+                            new JobSvf2OutputFormat
+                            {
+                                Views = new List<View>
+                                {
+                                    View._2d,
+                                    View._3d
+                                }
+                            }
+                        },
+                        Destination = new JobPayloadOutputDestination
+                        {
+                            Region = Autodesk.ModelDerivative.Model.Region.US
+                        }
                     }
                 };
-                var job = new JobPayload(new JobPayloadInput(urn), new JobPayloadOutput(outputs));
-
                 _context.ProgressBarMaximum = 100;
                 _context.ProgressBarPercentage = 0;
                 _context.IsProgressBarIndetermined = false;
-                await derivative.TranslateAsync(job, true);
+                var job = await modelDerivativeClient.StartJobAsync(jobPayload: payload, accessToken: _context.AccessToken);
                 _uiWait = true;
 
                 // start a monitor job to follow the translation
@@ -501,16 +397,16 @@ namespace bucket.manager.wpf
 
         private async void DownloadSVFButton_Click(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
-                if (ForgeBucketsTree.SelectedItem is null or not BucketItemVM)
+                if (BucketsTree.SelectedItem is null or not BucketItemVM)
                 {
                     MessageBox.Show(StringResources.errorObjectSelectionMessage,
                         StringResources.errorObjectSelectionCaption);
                     return;
                 }
 
-                var bucketItem = ForgeBucketsTree.SelectedItem as BucketItemVM;
+                var bucketItem = BucketsTree.SelectedItem as BucketItemVM;
                 var urn = bucketItem?.Key;
                 var folderPicker = new FolderPicker();
 
@@ -524,14 +420,14 @@ namespace bucket.manager.wpf
                 _context.StatusBarText = StringResources.statusDownloading;
 
                 // get the list of resources to download
-                var resourcesToDownload = await ForgeUtils.Derivatives.ExtractSVFAsync(urn, _context.AccessToken);
+                var resourcesToDownload = await Utils.Derivatives.ExtractSVFAsync(urn, _context.AccessToken);
 
                 // update the UI
                 _context.ProgressBarMaximum = resourcesToDownload.Count;
                 _context.ProgressBarPercentage = 0;
                 _context.IsProgressBarIndetermined = false;
                 var client = new RestClient("https://developer.api.autodesk.com/");
-                foreach (ForgeUtils.Derivatives.Resource resource in resourcesToDownload)
+                foreach (Utils.Derivatives.Resource resource in resourcesToDownload)
                 {
 
                     ++_context.ProgressBarPercentage;
@@ -566,7 +462,7 @@ namespace bucket.manager.wpf
 
         private async void CreateBucketButton_Click(object sender, RoutedEventArgs e)
         {
-            await ForgeApiCaller(async () =>
+            await APSApiCaller(async () =>
             {
 
                 if (string.IsNullOrEmpty(_context.AccessToken))
@@ -579,17 +475,10 @@ namespace bucket.manager.wpf
                 var result = createDialog.ShowDialog();
                 if (result == true)
                 {
-                    var buckets = new BucketsApi
-                    {
-                        Configuration =
-                        {
-                            AccessToken = _context.AccessToken
-                        }
-                    };
+                    var ossClient = new OssClient(_sdkManager);
                     _uiWait = true;
                     var bucketKey = createDialog.AddGuid.IsChecked == true ? $"{createDialog.BucketName.Text}.{Guid.NewGuid()}" : createDialog.BucketName.Text;
-                    var bucketPayload = new PostBucketsPayload(bucketKey.ToLower(), null, PostBucketsPayload.PolicyKeyEnum.Transient);
-                    await buckets.CreateBucketAsync(bucketPayload, Region.Text);
+                    await ossClient.CreateBucketAsync(Region.Text, new CreateBucketsPayload { BucketKey = bucketKey.ToLower(), PolicyKey = "Transient" }, accessToken: _context.AccessToken);
                     RefreshBucketButton_Click(null, null);
                 }
             });
@@ -643,11 +532,11 @@ namespace bucket.manager.wpf
             WebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
         }
 
-        private void ForgeBucketsTree_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void BucketsTree_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.OriginalSource is not TextBlock)
                 return;
-            if (ForgeBucketsTree.SelectedItem is BucketItemVM bucketItem)
+            if (BucketsTree.SelectedItem is BucketItemVM bucketItem)
             {
                 WebView.CoreWebView2.Navigate($"https://bucketmanager/HTML/Viewer.html?URN={bucketItem.Key}&Token={_context.AccessToken}");
             }

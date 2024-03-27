@@ -324,9 +324,9 @@ namespace bucket.manager.wpf {
         /// <summary>
         ///   Looks up a localized string similar to Application Credentials.
         /// </summary>
-        public static string lblForgeCredential {
+        public static string lblCredential {
             get {
-                return ResourceManager.GetString("lblForgeCredential", resourceCulture);
+                return ResourceManager.GetString("lblCredential", resourceCulture);
             }
         }
         
