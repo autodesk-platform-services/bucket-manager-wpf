@@ -4,7 +4,7 @@ It is a .NET 6 and WPF update for https://github.com/Autodesk-Forge/forge-bucket
 
 # Demonstration
 
-This sample is a Windows desktop application that lists all buckets for a given Forge Client ID & Secret, allow creating new buckets, upload new files, translate and delete. Allow download of SVF for offline viewing. Simple JavaScript for testing code. It is intended as tool for developers.
+This sample is a Windows desktop application that lists all buckets for a given APS Client ID & Secret, allow creating new buckets, upload new files, translate and delete. Allow download of SVF for offline viewing. Simple JavaScript for testing code. It is intended as tool for developers.
 
  Setup
 
@@ -16,9 +16,9 @@ This sample is a Windows desktop application that lists all buckets for a given 
 
 ## Running locally
 
-For using this sample, you need an Autodesk developer credentials. Visit the [Forge Developer Portal](https://developer.autodesk.com), sign up for an account, then [create an app](https://developer.autodesk.com/myapps/create).
+For using this sample, you need an Autodesk developer credentials. Visit the [APS Developer Portal](https://aps.autodesk.com), sign up for an account, then [create an app](https://developer.autodesk.com/myapps/create).
 
-Download the repository, open `bucket.manager.sln` Solution on Visual Studio. The build process should download the required packages (**Autodesk.Forge** and dependencies). Run the project. At the form, enter your Client ID & Secret, click on **Authenticate** button. The app will obtain a 2-legged token and list buckets and files. After translating, files should be Viewable.
+Download the repository, open `bucket.manager.sln` Solution on Visual Studio. The build process should download the required packages. Run the project. At the form, enter your Client ID & Secret, click on **Authenticate** button. The app will obtain a 2-legged token and list buckets and files. After translating, files should be Viewable.
 
 # Features
 
