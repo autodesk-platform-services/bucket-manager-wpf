@@ -201,14 +201,14 @@
   <data name="lblAddGUID" xml:space="preserve">
     <value>Add GUID as suffix?</value>
   </data>
+  <data name="lblAPSCredential" xml:space="preserve">
+    <value>Application Credentials</value>
+  </data>
   <data name="lblCreateBucket" xml:space="preserve">
     <value>Create Bucket</value>
   </data>
   <data name="lblCreateBucketName" xml:space="preserve">
     <value>Enter your bucket name here:</value>
-  </data>
-  <data name="lblCredential" xml:space="preserve">
-    <value>Application Credentials</value>
   </data>
   <data name="lblId" xml:space="preserve">
     <value>ID:</value>

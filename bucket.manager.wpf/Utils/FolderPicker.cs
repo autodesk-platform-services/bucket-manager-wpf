@@ -1,10 +1,5 @@
 ﻿// WPF doesn't have a native folder picker. We can use either shell API or winforms. 
 // Here is the shell API version from https://stackoverflow.com/questions/11624298/how-do-i-use-openfiledialog-to-select-a-folder
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace bucket.manager.wpf.Utils
 {

@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 
 namespace bucket.manager.wpf.ViewModels
 {
     internal class BucketNameValidation : ValidationRule
     {
+        /// <summary>
+        /// Validate the bucket name using regex.
+        /// </summary>
+        /// <param name="value">value to validate</param>
+        /// <param name="cultureInfo">culture</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             var text = value.ToString();

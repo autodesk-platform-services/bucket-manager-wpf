@@ -40,20 +40,20 @@
         }
 
         var urn = getParameterByName('URN');
-        var token = getParameterByName('Token');
+        var accessToken = getParameterByName('Token');
 
-        if (urn != null && token != null) {
-            showModel(urn, token);
+        if (urn != null && accessToken != null) {
+            showModel(urn, accessToken);
         }
 
         // Viewer tutorial
         var viewer;
 
-        function showModel(urn, token) {
+        function showModel(urn, accessToken) {
             debugger;
             var options = {
                 env: 'AutodeskProduction',
-                accessToken: token
+                accessToken: accessToken
             };
             var documentId = 'urn:' + urn;
             Autodesk.Viewing.Initializer(options, function onInitialized() {

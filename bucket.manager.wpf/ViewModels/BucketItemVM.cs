@@ -1,29 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace bucket.manager.wpf.ViewModels
 {
+    // View Model of a bucket in the bucket tree.
     internal class BucketItemVM : INotifyPropertyChanged
     {
         private string _name = string.Empty;
         private string _key = string.Empty;
-        private bool _isExpanded = false;
         private readonly BucketVM _parent ;
+        private bool _isExpanded = false;
 
-        public BucketItemVM(BucketVM parent)
-        {
-            _parent = parent;
-        }
         public bool IsExpanded
         {
             get => _isExpanded;
             set => SetField(ref _isExpanded, value);
         }
+        public BucketItemVM(BucketVM parent)
+        {
+            _parent = parent;
+        }
+
         public string Name
         {
             get => _name;
@@ -46,11 +44,23 @@ namespace bucket.manager.wpf.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// On a property change, invoke the event.
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// When a field is set, check if the value is different and invoke the event.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="field"></param>
+        /// <param name="value"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;

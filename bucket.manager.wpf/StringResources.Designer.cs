@@ -304,6 +304,15 @@ namespace bucket.manager.wpf {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Application Credentials.
+        /// </summary>
+        public static string lblAPSCredential {
+            get {
+                return ResourceManager.GetString("lblAPSCredential", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Create Bucket.
         /// </summary>
         public static string lblCreateBucket {
@@ -318,15 +327,6 @@ namespace bucket.manager.wpf {
         public static string lblCreateBucketName {
             get {
                 return ResourceManager.GetString("lblCreateBucketName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Application Credentials.
-        /// </summary>
-        public static string lblCredential {
-            get {
-                return ResourceManager.GetString("lblCredential", resourceCulture);
             }
         }
         

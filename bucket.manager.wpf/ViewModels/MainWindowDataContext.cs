@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace bucket.manager.wpf.ViewModels
 {
+    // View model of the main window.
     internal class MainWindowDataContext : INotifyPropertyChanged
     {
         private string _accessToken = string.Empty;
@@ -14,15 +13,10 @@ namespace bucket.manager.wpf.ViewModels
         
         // Locking all buttons is not the best solution, we can do better in real production world 
         private bool _uiEnabled = true;
-
+        public string Region = "US";
         
-        private bool _isProgressBarIndetermined = false;
+        private bool _isProgressBarIndetermined;
         private int _progressBarMaximum = 100;
-        private bool _isAuthenticating = false;
-        private bool _isRefreshingBucket = false;
-        private bool _isRefreshingBucketItem = false;
-        private bool _isTranslating = false;
-
         
 
         public string StatusBarText { get => _statusBarText; set => SetField(ref _statusBarText, value); }
@@ -35,12 +29,23 @@ namespace bucket.manager.wpf.ViewModels
         public bool IsProgressBarIndetermined { get => _isProgressBarIndetermined; set => SetField(ref _isProgressBarIndetermined, value); }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
+        /// <summary>
+        /// On a property change, invoke the event.
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// When a field is set, check if the value is different and invoke the event.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="field"></param>
+        /// <param name="value"></param>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
