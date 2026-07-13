@@ -150,8 +150,8 @@
   <data name="btnUploadFile" xml:space="preserve">
     <value>Upload File</value>
   </data>
-  <data name="cbItemAPAC" xml:space="preserve">
-    <value>APAC</value>
+  <data name="cbItemAUS" xml:space="preserve">
+    <value>AUS</value>
   </data>
   <data name="cbItemEMEA" xml:space="preserve">
     <value>EMEA</value>

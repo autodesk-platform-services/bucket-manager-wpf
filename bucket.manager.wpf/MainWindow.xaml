@@ -70,7 +70,7 @@
                     <ComboBox Name="Region" VerticalAlignment="Center" SelectedIndex="0" IsEnabled="{Binding Path=UIEnabled}" SelectionChanged="Region_OnSelectionChanged">
                         <ComboBoxItem Content="{x:Static local:StringResources.cbItemUS}"></ComboBoxItem>
                         <ComboBoxItem Content="{x:Static local:StringResources.cbItemEMEA}"></ComboBoxItem>
-                        <ComboBoxItem Content="{x:Static local:StringResources.cbItemAPAC}"></ComboBoxItem>
+                        <ComboBoxItem Content="{x:Static local:StringResources.cbItemAUS}"></ComboBoxItem>
                     </ComboBox>
                 </DockPanel>
                 <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">

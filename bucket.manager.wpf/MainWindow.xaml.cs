@@ -184,7 +184,7 @@ namespace bucket.manager.wpf
 
             nodeBucket.IsExpanded = wantExpand;
         }
-        private async void RefreshBucketButton_Click(object sender, RoutedEventArgs e)
+        private async void RefreshBucketButton_Click(object? sender, RoutedEventArgs? e)
         {
             await APSAPICaller(async () =>
             {
@@ -565,7 +565,7 @@ namespace bucket.manager.wpf
             var data = e.AddedItems[0] as ComboBoxItem;
             _context.Region = data?.Content.ToString() switch
             {
-                "APAC" => Autodesk.Oss.Model.Region.APAC,
+                "AUS" => Autodesk.Oss.Model.Region.AUS,
                 "EMEA" => Autodesk.Oss.Model.Region.EMEA,
                 _ => Autodesk.Oss.Model.Region.US
 

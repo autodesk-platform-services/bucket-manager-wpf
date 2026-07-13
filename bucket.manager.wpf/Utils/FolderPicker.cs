@@ -12,13 +12,13 @@ namespace bucket.manager.wpf.Utils
 
     public class FolderPicker
     {
-        public virtual string ResultPath { get; protected set; }
-        public virtual string ResultName { get; protected set; }
-        public virtual string InputPath { get; set; }
+        public virtual string? ResultPath { get; protected set; }
+        public virtual string? ResultName { get; protected set; }
+        public virtual string? InputPath { get; set; }
         public virtual bool ForceFileSystem { get; set; }
-        public virtual string Title { get; set; }
-        public virtual string OkButtonLabel { get; set; }
-        public virtual string FileNameLabel { get; set; }
+        public virtual string? Title { get; set; }
+        public virtual string? OkButtonLabel { get; set; }
+        public virtual string? FileNameLabel { get; set; }
 
         protected virtual int SetOptions(int options)
         {
@@ -30,7 +30,7 @@ namespace bucket.manager.wpf.Utils
         }
 
         // for WPF support
-        public bool? ShowDialog(Window owner = null, bool throwOnError = false)
+        public bool? ShowDialog(Window? owner = null, bool throwOnError = false)
         {
             owner ??= Application.Current.MainWindow;
             return ShowDialog(owner != null ? new WindowInteropHelper(owner).Handle : IntPtr.Zero, throwOnError);
@@ -109,7 +109,7 @@ namespace bucket.manager.wpf.Utils
         }
 
         [DllImport("shell32")]
-        private static extern int SHCreateItemFromParsingName([MarshalAs(UnmanagedType.LPWStr)] string pszPath, IBindCtx pbc, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, out IShellItem ppv);
+        private static extern int SHCreateItemFromParsingName([MarshalAs(UnmanagedType.LPWStr)] string pszPath, IBindCtx? pbc, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, out IShellItem ppv);
 
         [DllImport("user32")]
         private static extern IntPtr GetDesktopWindow();

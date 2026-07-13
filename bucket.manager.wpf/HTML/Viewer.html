@@ -56,6 +56,7 @@
                 accessToken: accessToken
             };
             var documentId = 'urn:' + urn;
+            Autodesk.Viewing.FeatureFlags.set('DS_ENDPOINTS', true);
             Autodesk.Viewing.Initializer(options, function onInitialized() {
                 viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('MyViewerDiv'));
                 viewer.start();

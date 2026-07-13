@@ -1,6 +1,6 @@
 # Desktop tool to manage buckets and objects
 
-It is a .NET 8 and WPF update for https://github.com/Autodesk-Forge/forge-bucketsmanager-desktop
+It is a .NET 10 and WPF update for https://github.com/Autodesk-Forge/forge-bucketsmanager-desktop
 
 It also uses the new Autodesk .Net SDKs.
 
@@ -12,7 +12,7 @@ This sample is a Windows desktop application that lists all buckets for a given 
 
 ## Prerequisites
 
-1. **Visual Studio 2022+**: This sample is windows only
+1. **Visual Studio 2026+**: This sample is windows only
 2. **Webview2**: Chromium based browser control for .NET apps. It requires EDGE and WebView2 Chromium Runtime to run.
 3. **.NET Framework** basic knowledge with C#
 
